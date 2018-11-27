@@ -1,0 +1,3 @@
+# Everything below will be ignored by git, and won't show up when using git add.
+
+*.exe
