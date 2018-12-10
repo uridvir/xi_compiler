@@ -4,142 +4,101 @@
 #include <set>
 #include <vector>
 #include <map>
-#include <optional>
 #include <tuple>
 #include <string>
+#include <memory>
 
-enum NodeType {_union, _concatenation, _star, _leafA, _leafB};
+enum NodeType {_none, _union, _concatenation, _star, _leafA, _leafB};
 
 class Node {
   public:
+  std::unique_ptr<Node> left;
+  std::unique_ptr<Node> center;
+  std::unique_ptr<Node> right;
   bool empty;
   NodeType type;
 
   Node(){
+    this->left = nullptr;
+    this->center = nullptr;
+    this->right = nullptr;
     this->empty = true;
+    this->type = NodeType::_none;
   }
-};
 
-class UnionNode : public Node {
-  public:
-  Node* left;
-  Node* right;
-
-  UnionNode(Node* left, Node* right){
-    this->left = left;
-    this->right = right;
+  explicit Node(NodeType type){
+    this->left = nullptr;
+    this->center = nullptr;
+    this->right = nullptr;
     this->empty = false;
-    this->type = NodeType::_union;
+    this->type = type;
   }
-};
 
-class ConcatenationNode : public Node {
-  public:
-  Node* left;
-  Node* right;
-
-  ConcatenationNode(Node* left, Node* right){
-    this->left = left;
-    this->right = right;
+  Node(std::unique_ptr<Node> _center, NodeType type){
+    this->left = nullptr;
+    this->center = std::move(_center);
+    this->right = nullptr;
     this->empty = false;
-    this->type = NodeType::_concatenation;
+    this->type = type;
   }
-};
 
-class StarNode : public Node {
-  public:
-  Node* child;
-
-  explicit StarNode(Node* child){
-    this->child = child;
+  Node(std::unique_ptr<Node> _left, std::unique_ptr<Node> _right, NodeType type){
+    this->left = std::move(_left);
+    this->center = nullptr;
+    this->right = std::move(_right);
     this->empty = false;
-    this->type = NodeType::_star;
-  }
-};
-
-class LeafA : public Node {
-  public:
-  LeafA(){
-    this->empty = false;
-    this->type = NodeType::_leafA;
-  }
-};
-
-class LeafB : public Node {
-  public:
-  LeafB(){
-    this->empty = false;
-    this->type = NodeType::_leafB;
+    this->type = type;
   }
 };
 
 class ParseTree {
   public:
-  Node* root;
+  std::unique_ptr<Node> root;
 
-  Node* evaluate(std::string regex){
-    Node* result;
-    {
-      Node node;
-      result = &node;
-    }
+  std::unique_ptr<Node> evaluate(std::string regex){
+    auto result = std::make_unique<Node>();
     for(int i = 0; i < regex.length(); i++){
       if(regex[i] == 'a'){
-        Node* branch;
-        {
-          Node node;
-          branch = &node;
-        }
+        auto branch = std::make_unique<Node>();
         if(i + 1 < regex.length()){
           if(regex[i + 1] == '*'){
-            Node leaf = LeafA();
-            StarNode star = StarNode(&leaf);
-            branch = &star;
+            branch = std::make_unique<Node>(std::make_unique<Node>(NodeType::_leafA), NodeType::_star);
             i++;
           }
         }
         else {
-          *branch = LeafA();
+          branch = std::make_unique<Node>(NodeType::_leafA);
         }
 
         if(result->empty){
-          result = branch;
+          result = std::move(branch);
         }
         else {
-          ConcatenationNode concatenation = ConcatenationNode(result, branch);
-          result = &concatenation;
+          result = std::make_unique<Node>(std::move(result), std::move(branch), NodeType::_concatenation);
         }
       }
       else if(regex[i] == 'b'){
-        Node* branch;
-        {
-          Node node;
-          branch = &node;
-        }
+        auto branch = std::make_unique<Node>();
         if(i + 1 < regex.length()){
           if(regex[i + 1] == '*'){
-            Node leaf = LeafB();
-            StarNode star = StarNode(&leaf);
-            branch = &star;
+            branch = std::make_unique<Node>(std::make_unique<Node>(NodeType::_leafB), NodeType::_star);
             i++;
           }
         }
         else {
-          *branch = LeafB();
+          branch = std::make_unique<Node>(NodeType::_leafB);
         }
 
         if(result->empty){
-          result = branch;
+          result = std::move(branch);
         }
         else {
-          ConcatenationNode concatenation = ConcatenationNode(result, branch);
-          result = &concatenation;
+          result = std::make_unique<Node>(std::move(result), std::move(branch), NodeType::_concatenation);
         }
       }
       else if(regex[i] == '|'){
         std::string remainder = regex.substr(i + 1, regex.length());
-        UnionNode _union = UnionNode(result, evaluate(remainder));
-        result = &_union;
+        result = std::make_unique<Node>(std::move(result), evaluate(remainder), NodeType::_union);
       }
       else if(regex[i] == '('){
         int depth = 1;
@@ -158,15 +117,10 @@ class ParseTree {
             }
           }
         }
-        Node* branch;
-        {
-          Node node;
-          branch = &node;
-        }
+        auto branch = std::make_unique<Node>();
         if(endpos + 1 < regex.length()){
           if(regex[endpos + 1] == '*'){
-            StarNode star = StarNode(evaluate(contents));
-            branch = &star;
+            branch = std::make_unique<Node>(evaluate(contents), NodeType::_star);
             i = endpos + 1;
           }
         }
@@ -176,11 +130,10 @@ class ParseTree {
         }
 
         if(result->empty){
-          result = branch;
+          result = std::move(branch);
         }
         else {
-          ConcatenationNode concatenation = ConcatenationNode(result, branch);
-          result = &concatenation;
+          result = std::make_unique<Node>(std::move(result), std::move(branch), NodeType::_concatenation);
         }
       }
     }
@@ -197,20 +150,21 @@ class NFA {
   std::set<int> acceptStates;
 };
 
-std::tuple<std::string, int> printNode(Node* root, int nodeLabel){
+std::tuple<std::string, int> printNode(const std::unique_ptr<Node>& root, int nodeLabel){
   std::string output;
   int nodeLabelFinal;
   switch(root->type){
+    case NodeType::_none:
+      std::cout << "Node has no type! Returning null." << std::endl;
+      return std::make_tuple("", 0);
     case NodeType::_union:
       {
-        auto _root = static_cast<UnionNode*>(root);
-
         int nodeLabelLeft = nodeLabel + 1;
-        auto leftPrinted = printNode(_root->left, nodeLabelLeft);
+        auto leftPrinted = printNode(root->left, nodeLabelLeft);
         std::string leftOutput = std::get<0>(leftPrinted);
         int nodeLabelRight = std::get<1>(leftPrinted) + 1;
 
-        auto rightPrinted = printNode(_root->right, nodeLabelRight);
+        auto rightPrinted = printNode(root->right, nodeLabelRight);
         std::string rightOutput = std::get<0>(rightPrinted);
         nodeLabelFinal = std::get<1>(rightPrinted);
 
@@ -220,14 +174,12 @@ std::tuple<std::string, int> printNode(Node* root, int nodeLabel){
       }
     case NodeType::_concatenation:
       {
-        auto _root = static_cast<ConcatenationNode*>(root);
-
         int nodeLabelLeft = nodeLabel + 1;
-        auto leftPrinted = printNode(_root->left, nodeLabelLeft);
+        auto leftPrinted = printNode(root->left, nodeLabelLeft);
         std::string leftOutput = std::get<0>(leftPrinted);
         int nodeLabelRight = std::get<1>(leftPrinted) + 1;
 
-        auto rightPrinted = printNode(_root->right, nodeLabelRight);
+        auto rightPrinted = printNode(root->right, nodeLabelRight);
         std::string rightOutput = std::get<0>(rightPrinted);
         nodeLabelFinal = std::get<1>(rightPrinted);
 
@@ -237,14 +189,12 @@ std::tuple<std::string, int> printNode(Node* root, int nodeLabel){
       }
     case NodeType::_star:
       {
-        auto _root = static_cast<StarNode*>(root);
+        int nodeLabelCenter = nodeLabel + 1;
+        auto centerPrinted = printNode(root->center, nodeLabelCenter);
+        std::string centerOutput = std::get<0>(centerPrinted);
+        nodeLabelFinal = std::get<1>(centerPrinted);
 
-        int nodeLabelChild = nodeLabel + 1;
-        auto childPrinted = printNode(_root->child, nodeLabelChild);
-        std::string childOutput = std::get<0>(childPrinted);
-        nodeLabelFinal = std::get<1>(childPrinted);
-
-        output = "n" + std::to_string(nodeLabel) + " = n" + std::to_string(nodeLabelChild) + " *\n" + childOutput;
+        output = "n" + std::to_string(nodeLabel) + " = n" + std::to_string(nodeLabelCenter) + " *\n" + centerOutput;
         break;
       }
     case NodeType::_leafA:
@@ -274,65 +224,16 @@ int main(int argc, char* argv[]){
   ParseTree tree(regex);
   */
 
-  LeafA* r1; 
-  {
-    LeafA leaf;
-    r1 = &leaf;
-  }
-
-  LeafB* r2;
-  {
-    LeafB leaf;
-    r2 = &leaf;
-  }
-  
-  UnionNode* r3;
-  {
-    UnionNode _union = UnionNode(r1, r2);
-    r3 = &_union;
-  }
-
-  StarNode* r5;
-  {
-    StarNode star = StarNode(r3);
-    r5 = &star;
-  }
-
-  LeafA* r6;
-  {
-    LeafA leaf;
-    r6 = &leaf;
-  }
-
-  ConcatenationNode* r7;
-  {
-    ConcatenationNode concatenation = ConcatenationNode(r5, r6);
-    r7 = &concatenation;
-  }
-
-  LeafB* r8;
-  {
-    LeafB leaf;
-    r8 = &leaf;
-  }
-
-  ConcatenationNode* r9;
-  {
-    ConcatenationNode concatenation = ConcatenationNode(r7, r8);
-    r9 = &concatenation;
-  }
-
-  LeafB* r10;
-  {
-    LeafB leaf;
-    r10 = &leaf;
-  }
-
-  ConcatenationNode* r11;
-  {
-    ConcatenationNode concatenation = ConcatenationNode(r9, r10);
-    r11 = &concatenation;
-  }
+  auto r1 = std::make_unique<Node>(NodeType::_leafA);
+  auto r2 = std::make_unique<Node>(NodeType::_leafB);
+  auto r3 = std::make_unique<Node>(std::move(r1), std::move(r2), NodeType::_union);
+  auto r5 = std::make_unique<Node>(std::move(r3), NodeType::_star);
+  auto r6 = std::make_unique<Node>(NodeType::_leafA);
+  auto r7 = std::make_unique<Node>(std::move(r5), std::move(r6), NodeType::_concatenation);
+  auto r8 = std::make_unique<Node>(NodeType::_leafB);
+  auto r9 = std::make_unique<Node>(std::move(r7), std::move(r8), NodeType::_concatenation);
+  auto r10 = std::make_unique<Node>(NodeType::_leafB);
+  auto r11 = std::make_unique<Node>(std::move(r9), std::move(r10), NodeType::_concatenation);
 
   std::string output = std::get<0>(printNode(r11, 1));
   std::cout << output;
