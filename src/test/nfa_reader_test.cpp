@@ -53,18 +53,16 @@ class Node {
 
 class ParseTree {
   public:
-  std::unique_ptr<Node> root;
+  Node* root;
 
   std::unique_ptr<Node> evaluate(std::string regex){
     auto result = std::make_unique<Node>();
     for(int i = 0; i < regex.length(); i++){
       if(regex[i] == 'a'){
         auto branch = std::make_unique<Node>();
-        if(i + 1 < regex.length()){
-          if(regex[i + 1] == '*'){
-            branch = std::make_unique<Node>(std::make_unique<Node>(NodeType::_leafA), NodeType::_star);
-            i++;
-          }
+        if(i + 1 < regex.length() && regex[i + 1] == '*'){
+          branch = std::make_unique<Node>(std::make_unique<Node>(NodeType::_leafA), NodeType::_star);
+          i++;
         }
         else {
           branch = std::make_unique<Node>(NodeType::_leafA);
@@ -79,11 +77,9 @@ class ParseTree {
       }
       else if(regex[i] == 'b'){
         auto branch = std::make_unique<Node>();
-        if(i + 1 < regex.length()){
-          if(regex[i + 1] == '*'){
-            branch = std::make_unique<Node>(std::make_unique<Node>(NodeType::_leafB), NodeType::_star);
-            i++;
-          }
+        if(i + 1 < regex.length() && regex[i + 1] == '*'){
+          branch = std::make_unique<Node>(std::make_unique<Node>(NodeType::_leafB), NodeType::_star);
+          i++;
         }
         else {
           branch = std::make_unique<Node>(NodeType::_leafB);
@@ -99,6 +95,7 @@ class ParseTree {
       else if(regex[i] == '|'){
         std::string remainder = regex.substr(i + 1, regex.length());
         result = std::make_unique<Node>(std::move(result), evaluate(remainder), NodeType::_union);
+        break;
       }
       else if(regex[i] == '('){
         int depth = 1;
@@ -111,18 +108,16 @@ class ParseTree {
           if(regex[j] == ')'){
             depth--;
             if(depth == 0){
-              contents = regex.substr(i + 1, (j - 1) - (i + 1));
+              contents = regex.substr(i + 1, j - i - 1);
               endpos = j;
               break;
             }
           }
         }
         auto branch = std::make_unique<Node>();
-        if(endpos + 1 < regex.length()){
-          if(regex[endpos + 1] == '*'){
-            branch = std::make_unique<Node>(evaluate(contents), NodeType::_star);
-            i = endpos + 1;
-          }
+        if(endpos + 1 < regex.length() && regex[endpos + 1] == '*'){
+          branch = std::make_unique<Node>(evaluate(contents), NodeType::_star);
+          i = endpos + 1;
         }
         else {
           branch = evaluate(contents);
@@ -141,7 +136,7 @@ class ParseTree {
   }
 
   explicit ParseTree(std::string regex){
-    root = evaluate(std::move(regex));
+    root = evaluate(regex).release();
   }
 };
 
@@ -155,8 +150,7 @@ std::tuple<std::string, int> printNode(const std::unique_ptr<Node>& root, int no
   int nodeLabelFinal;
   switch(root->type){
     case NodeType::_none:
-      std::cout << "Node has no type! Returning null." << std::endl;
-      return std::make_tuple("", 0);
+      return std::make_tuple("n" + std::to_string(nodeLabel) + " = ?\n", nodeLabel);
     case NodeType::_union:
       {
         int nodeLabelLeft = nodeLabel + 1;
@@ -210,19 +204,11 @@ std::tuple<std::string, int> printNode(const std::unique_ptr<Node>& root, int no
 }
 
 std::string printTree(ParseTree tree){
-  return std::get<0>(printNode(tree.root, 1));
+  return std::get<0>(printNode(std::unique_ptr<Node>(tree.root), 1));
 }
 
 int main(int argc, char* argv[]){
   /*
-  //Reads file into string
-  std::ifstream fin("test1.txt");
-  auto size = fin.tellg();
-  std::string regex(size, '\0');
-  fin.read(&regex[0], size);
-
-  ParseTree tree(regex);
-  */
 
   auto r1 = std::make_unique<Node>(NodeType::_leafA);
   auto r2 = std::make_unique<Node>(NodeType::_leafB);
@@ -237,4 +223,19 @@ int main(int argc, char* argv[]){
 
   std::string output = std::get<0>(printNode(r11, 1));
   std::cout << output;
+
+  */
+
+  //Reads file into string
+  std::ifstream fin("test1.txt", std::ios::binary | std::ios::ate);
+  auto size = fin.tellg();
+  std::string regex(size, '\0');
+  fin.seekg(0);
+  fin.read(&regex[0], size);
+
+  std::cout << size << std::endl; //debug
+  std::cout << regex << std::endl; //debug
+
+  ParseTree tree(regex);
+  std::cout << printTree(tree);
 }
