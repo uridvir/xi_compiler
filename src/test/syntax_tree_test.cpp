@@ -1,12 +1,8 @@
 #include <fstream>
-#include <sstream>
 #include <iostream>
-#include <set>
-#include <vector>
-#include <map>
-#include <tuple>
-#include <string>
 #include <memory>
+#include <string>
+#include <tuple>
 
 enum NodeType {_none, _union, _concatenation, _star, _leafA, _leafB};
 
@@ -51,7 +47,7 @@ class Node {
   }
 };
 
-class ParseTree {
+class SyntaxTree {
   public:
   Node* root;
 
@@ -135,14 +131,9 @@ class ParseTree {
     return result;
   }
 
-  explicit ParseTree(std::string regex){
-    root = evaluate(regex).release();
+  explicit SyntaxTree(std::string regex){
+    root = evaluate(std::move(regex)).release();
   }
-};
-
-class NFA {
-  std::vector<std::map<char, int> > transitions;
-  std::set<int> acceptStates;
 };
 
 std::tuple<std::string, int> printNode(const std::unique_ptr<Node>& root, int nodeLabel){
@@ -203,11 +194,11 @@ std::tuple<std::string, int> printNode(const std::unique_ptr<Node>& root, int no
   return std::make_tuple(output, nodeLabelFinal);
 }
 
-std::string printTree(ParseTree tree){
+std::string printTree(SyntaxTree tree){
   return std::get<0>(printNode(std::unique_ptr<Node>(tree.root), 1));
 }
 
-int main(int argc, char* argv[]){
+int main(){
   /*
 
   auto r1 = std::make_unique<Node>(NodeType::_leafA);
@@ -236,6 +227,6 @@ int main(int argc, char* argv[]){
   std::cout << size << std::endl; //debug
   std::cout << regex << std::endl; //debug
 
-  ParseTree tree(regex);
+  SyntaxTree tree(regex);
   std::cout << printTree(tree);
 }
