@@ -50,91 +50,93 @@ class Node {
 class SyntaxTree {
   public:
   Node* root;
+  std::unique_ptr<Node> evaluate(std::string regex);
+  explicit SyntaxTree(std::string regex);
+};
 
-  std::unique_ptr<Node> evaluate(std::string regex){
-    auto result = std::make_unique<Node>();
-    for(int i = 0; i < regex.length(); i++){
-      if(regex[i] == 'a'){
-        auto branch = std::make_unique<Node>();
-        if(i + 1 < regex.length() && regex[i + 1] == '*'){
-          branch = std::make_unique<Node>(std::make_unique<Node>(NodeType::_leafA), NodeType::_star);
-          i++;
-        }
-        else {
-          branch = std::make_unique<Node>(NodeType::_leafA);
-        }
-
-        if(result->empty){
-          result = std::move(branch);
-        }
-        else {
-          result = std::make_unique<Node>(std::move(result), std::move(branch), NodeType::_concatenation);
-        }
+std::unique_ptr<Node> SyntaxTree::evaluate(std::string regex){
+  auto result = std::make_unique<Node>();
+  for(int i = 0; i < regex.length(); i++){
+    if(regex[i] == 'a'){
+      auto branch = std::make_unique<Node>();
+      if(i + 1 < regex.length() && regex[i + 1] == '*'){
+        branch = std::make_unique<Node>(std::make_unique<Node>(NodeType::_leafA), NodeType::_star);
+        i++;
       }
-      else if(regex[i] == 'b'){
-        auto branch = std::make_unique<Node>();
-        if(i + 1 < regex.length() && regex[i + 1] == '*'){
-          branch = std::make_unique<Node>(std::make_unique<Node>(NodeType::_leafB), NodeType::_star);
-          i++;
-        }
-        else {
-          branch = std::make_unique<Node>(NodeType::_leafB);
-        }
-
-        if(result->empty){
-          result = std::move(branch);
-        }
-        else {
-          result = std::make_unique<Node>(std::move(result), std::move(branch), NodeType::_concatenation);
-        }
+      else {
+        branch = std::make_unique<Node>(NodeType::_leafA);
       }
-      else if(regex[i] == '|'){
-        std::string remainder = regex.substr(i + 1, regex.length());
-        result = std::make_unique<Node>(std::move(result), evaluate(remainder), NodeType::_union);
-        break;
-      }
-      else if(regex[i] == '('){
-        int depth = 1;
-        std::string contents;
-        int endpos;
-        for(int j = i + 1; j < regex.length(); j++){
-          if(regex[j] == '('){
-            depth++;
-          }
-          if(regex[j] == ')'){
-            depth--;
-            if(depth == 0){
-              contents = regex.substr(i + 1, j - i - 1);
-              endpos = j;
-              break;
-            }
-          }
-        }
-        auto branch = std::make_unique<Node>();
-        if(endpos + 1 < regex.length() && regex[endpos + 1] == '*'){
-          branch = std::make_unique<Node>(evaluate(contents), NodeType::_star);
-          i = endpos + 1;
-        }
-        else {
-          branch = evaluate(contents);
-          i = endpos;
-        }
 
-        if(result->empty){
-          result = std::move(branch);
-        }
-        else {
-          result = std::make_unique<Node>(std::move(result), std::move(branch), NodeType::_concatenation);
-        }
+      if(result->empty){
+        result = std::move(branch);
+      }
+      else {
+        result = std::make_unique<Node>(std::move(result), std::move(branch), NodeType::_concatenation);
       }
     }
-    return result;
-  }
+    else if(regex[i] == 'b'){
+      auto branch = std::make_unique<Node>();
+      if(i + 1 < regex.length() && regex[i + 1] == '*'){
+        branch = std::make_unique<Node>(std::make_unique<Node>(NodeType::_leafB), NodeType::_star);
+        i++;
+      }
+      else {
+        branch = std::make_unique<Node>(NodeType::_leafB);
+      }
 
-  explicit SyntaxTree(std::string regex){
-    root = evaluate(std::move(regex)).release();
+      if(result->empty){
+        result = std::move(branch);
+      }
+      else {
+        result = std::make_unique<Node>(std::move(result), std::move(branch), NodeType::_concatenation);
+      }
+    }
+    else if(regex[i] == '|'){
+      std::string remainder = regex.substr(i + 1, regex.length());
+      result = std::make_unique<Node>(std::move(result), evaluate(remainder), NodeType::_union);
+      break;
+    }
+    else if(regex[i] == '('){
+      int depth = 1;
+      std::string contents;
+      int endpos;
+      for(int j = i + 1; j < regex.length(); j++){
+        if(regex[j] == '('){
+          depth++;
+        }
+        if(regex[j] == ')'){
+          depth--;
+          if(depth == 0){
+            contents = regex.substr(i + 1, j - i - 1);
+            endpos = j;
+            break;
+          }
+        }
+      }
+      auto branch = std::make_unique<Node>();
+      if(endpos + 1 < regex.length() && regex[endpos + 1] == '*'){
+        branch = std::make_unique<Node>(evaluate(contents), NodeType::_star);
+        i = endpos + 1;
+      }
+      else {
+        branch = evaluate(contents);
+        i = endpos;
+      }
+
+      if(result->empty){
+        result = std::move(branch);
+      }
+      else {
+        result = std::make_unique<Node>(std::move(result), std::move(branch), NodeType::_concatenation);
+      }
+    }
   }
-};
+  return result;
+}
+
+SyntaxTree::SyntaxTree(std::string regex){
+  root = evaluate(std::move(regex)).release();
+}
 
 std::tuple<std::string, int> printNode(const std::unique_ptr<Node>& root, int nodeLabel){
   std::string output;
@@ -198,24 +200,21 @@ std::string printTree(SyntaxTree tree){
   return std::get<0>(printNode(std::unique_ptr<Node>(tree.root), 1));
 }
 
+/*
 int main(){
-  /*
+  //auto r1 = std::make_unique<Node>(NodeType::_leafA);
+  //auto r2 = std::make_unique<Node>(NodeType::_leafB);
+  //auto r3 = std::make_unique<Node>(std::move(r1), std::move(r2), NodeType::_union);
+  //auto r5 = std::make_unique<Node>(std::move(r3), NodeType::_star);
+  //auto r6 = std::make_unique<Node>(NodeType::_leafA);
+  //auto r7 = std::make_unique<Node>(std::move(r5), std::move(r6), NodeType::_concatenation);
+  //auto r8 = std::make_unique<Node>(NodeType::_leafB);
+  //auto r9 = std::make_unique<Node>(std::move(r7), std::move(r8), NodeType::_concatenation);
+  //auto r10 = std::make_unique<Node>(NodeType::_leafB);
+  //auto r11 = std::make_unique<Node>(std::move(r9), std::move(r10), NodeType::_concatenation);
 
-  auto r1 = std::make_unique<Node>(NodeType::_leafA);
-  auto r2 = std::make_unique<Node>(NodeType::_leafB);
-  auto r3 = std::make_unique<Node>(std::move(r1), std::move(r2), NodeType::_union);
-  auto r5 = std::make_unique<Node>(std::move(r3), NodeType::_star);
-  auto r6 = std::make_unique<Node>(NodeType::_leafA);
-  auto r7 = std::make_unique<Node>(std::move(r5), std::move(r6), NodeType::_concatenation);
-  auto r8 = std::make_unique<Node>(NodeType::_leafB);
-  auto r9 = std::make_unique<Node>(std::move(r7), std::move(r8), NodeType::_concatenation);
-  auto r10 = std::make_unique<Node>(NodeType::_leafB);
-  auto r11 = std::make_unique<Node>(std::move(r9), std::move(r10), NodeType::_concatenation);
-
-  std::string output = std::get<0>(printNode(r11, 1));
-  std::cout << output;
-
-  */
+  //std::string output = std::get<0>(printNode(r11, 1));
+  //std::cout << output;
 
   //Reads file into string
   std::ifstream fin("test1.txt", std::ios::binary | std::ios::ate);
@@ -230,3 +229,4 @@ int main(){
   SyntaxTree tree(regex);
   std::cout << printTree(tree);
 }
+*/
