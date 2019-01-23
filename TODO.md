@@ -19,19 +19,17 @@ Progress:
 * Mockup
   1. Lexer (complete)
   2. Regex to syntax tree (complete)
-  3. Syntax tree and token labels to NFA
-  4. Merge NFAs into super-NFA using e-transitions
-  5. Convert super-NFA into DFA
-  6. Minimize DFA states
+  3. Syntax trees and token labels to super NFA (complete)
+  4. Convert super-NFA into DFA
+  5. Minimize DFA states
 
 * Real
   1. Get regex and token labels from file
   2. Regex to syntax tree
-  3. Syntax tree and token labels to NFA
-  4. Merge NFAs into super-NFA using e-transitions
-  5. Convert super-NFA into DFA
-  6. Minimize DFA states
-  7. Generate lexer
+  3. Syntax trees and token labels to super NFA
+  4. Convert super-NFA into DFA
+  5. Minimize DFA states
+  6. Generate lexer
 
 Notes:
 ------
