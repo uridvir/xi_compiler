@@ -11,7 +11,7 @@ TODO/Agenda for Xi Compiler Project
 
 ## Current work
 
-Currently, I am writing a basic lexical analyzer generator, and an accompanying lexer.
+Currently, subset construction doesn't work correctly when e-transitions are used to process multiple tokens.
 
 Progress:
 --------
