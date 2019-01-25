@@ -42,6 +42,9 @@ void DFA::construct(){
     Dtran.emplace(states, std::map<char, std::set<int> >());
     for(char c : std::set<char>({'a', 'b'})){
       std::set<int> newStates = e_closure(move(states, c));
+      if(newStates.empty()){
+        continue;
+      }
       if(Dstates.count(newStates) == 0){
         unmarked.emplace(newStates);
       }
@@ -109,7 +112,8 @@ int main(){
   std::vector<std::tuple<std::string, std::string> > regexTokenList =
     {
       std::make_tuple("a", "a"),
-      std::make_tuple("abb", "abb")
+      std::make_tuple("abb", "abb"),
+      std::make_tuple("a*bb*", "a*bb*")
     };
   NFA nfa(regexTokenList);
   DFA dfa(nfa);

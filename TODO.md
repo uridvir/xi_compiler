@@ -11,7 +11,7 @@ TODO/Agenda for Xi Compiler Project
 
 ## Current work
 
-Currently, subset construction doesn't work correctly when e-transitions are used to process multiple tokens.
+The next thing I need to do is implement the real lexer generator, and maybe add the DFA state minimization later.
 
 Progress:
 --------
@@ -20,7 +20,7 @@ Progress:
   1. Lexer (complete)
   2. Regex to syntax tree (complete)
   3. Syntax trees and token labels to super NFA (complete)
-  4. Convert super-NFA into DFA
+  4. Convert super-NFA into DFA (complete)
   5. Minimize DFA states
 
 * Real

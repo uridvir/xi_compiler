@@ -1,4 +1,4 @@
-#include <iostream>
+//#include <iostream>
 #include <map>
 #include <optional>
 #include <set>
@@ -92,6 +92,7 @@ int NFA::construct(const Node* root, int index){
   return result;
 }
 
+/*
 int main(){
   std::vector<std::tuple<std::string, std::string> > tokenRegexList =
     {
@@ -118,3 +119,4 @@ int main(){
     std::cout << "\"" << pair.second << "\" at " << pair.first << std::endl;
   }
 }
+*/
