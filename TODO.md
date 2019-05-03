@@ -11,22 +11,22 @@ TODO/Agenda for Xi Compiler Project
 
 ## Current work
 
-Ma'avar has just started, and I am resuming work. Priority number 1 is getting lookahead working.
+Ma'avar has just started, and I am resuming work. Priority number 1 is getting lookahead working. I am skipping
+implementing lookahead on the mockup (except for the lexer, which is actually difficult).
 
 Progress:
 --------
 
 * Mockup
-  1. Lexer (complete)
+  1. Lexer (complete, but without lookahead yet)
   2. Regex to syntax tree (complete)
   3. Syntax trees and token labels to super NFA (complete)
   4. Convert super-NFA into DFA (complete)
-  5. Lookahead operator
-  6. Minimize DFA states
+  5. Minimize DFA states
 
 * Real
   1. Get regex and token labels from file
-  2. Regex to syntax tree
+  2. Regex to syntax tree (complete)
   3. Syntax trees and token labels to super NFA
   4. Convert super-NFA into DFA
   5. Minimize DFA states
@@ -35,10 +35,9 @@ Progress:
 Notes:
 ------
 
-The mockup lexer can accept all characters, but it _cannot_ interpret the lookahead operator. Interpreting the lookahead
-operator will probably be added to the mockup. The rest of the mockup only accepts {a, b}. When fetching the token
-labels and regex from the definition file, currently the mockup can only understand basic Kleene notation for the regex.
-A change that should be made in the real version of the syntax tree generation code is to add convenient shortcuts like,
-for example, being able to type [0-9] rather than 0|1|2|3|4|5|6|7|8|9. This is not important for the mockup, but will
-make actually writing a language definition that the code will understand much easier. The lexer itself will be a C++
-source file created by the lexical analyzer generator.
+The mockup lexer can accept all characters, but it _cannot_ interpret the lookahead operator. The rest of the mockup
+only accepts {a, b}. When fetching the token labels and regex from the definition file, currently the mockup can only
+understand basic Kleene notation for the regex.  A change that should be made in the real version of the syntax tree
+generation code is to add convenient shortcuts like, for example, being able to type [0-9] rather than
+0|1|2|3|4|5|6|7|8|9. This is not important for the mockup, but will make actually writing a language definition that the
+code will understand much easier. The lexer itself will be a C++ source file created by the lexical analyzer generator.
