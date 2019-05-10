@@ -11,8 +11,8 @@ TODO/Agenda for Xi Compiler Project
 
 ## Current work
 
-Ma'avar has just started, and I am resuming work. Priority number 1 is getting lookahead working. I am skipping
-implementing lookahead on the mockup (except for the lexer, which is actually difficult).
+Next step is to rewrite the lexer to be able to handle the lookahead operator. After that I need to write code that can
+translate between Lex's regex syntax and Kleene notation.
 
 Progress:
 --------
@@ -27,8 +27,8 @@ Progress:
 * Real
   1. Get regex and token labels from file
   2. Regex to syntax tree (complete)
-  3. Syntax trees and token labels to super NFA
-  4. Convert super-NFA into DFA
+  3. Syntax trees and token labels to super NFA (complete)
+  4. Convert super-NFA into DFA (complete)
   5. Minimize DFA states
   6. Generate lexer
 

@@ -1,3 +1,5 @@
+#include "DFA.h"
+#include "NFA.h"
 #include "SyntaxTree.h"
 
 #include <fstream>
@@ -77,8 +79,65 @@ void test(const std::string& regex){
 
 } //end of namespace SyntaxTreeTest
 
+namespace NFATest {
+
+void test(NFA nfa){
+  std::cout << "\n\n";
+  std::cout << "Transitions:\n\n";
+  int i = 0;
+  for(auto state : nfa.transitions){
+    for(auto transition : state){
+      std::cout << i << " " << transition.second.value_or('e') << "-> " << transition.first << "\n";
+    }
+    i++;
+  }
+  std::cout << "\n\nAccept states: ";
+  for(int state : nfa.acceptStates){
+    std::cout << state << " ";
+  }
+  std::cout << "\n\nLookahead states: ";
+  for(int state : nfa.lookaheadStates){
+    std::cout << state << " ";
+  }
+  std::cout << "\n\nTokens:" << "\n";
+  for(auto pair : nfa.tokens){
+    std::cout << "\"" << pair.second << "\" at " << pair.first << "\n";
+  }
+  std::cout << "------------------------------\n\n";
+}
+
+} //end of namespace NFATest
+
+namespace DFATest {
+
+void test(DFA dfa){
+  std::cout << "Transitions:\n\n";
+  int i = 0;
+  for(auto state : dfa.transitions){
+    for(auto transition : state){
+      std::cout << i << " " << transition.first << "-> " << transition.second << "\n";
+    }
+    i++;
+  }
+  std::cout << "\n\nAccept states: ";
+  for(int state : dfa.acceptStates){
+    std::cout << state << " ";
+  }
+  std::cout << "\n\nLookahead states: ";
+  for(int state : dfa.lookaheadStates){
+    std::cout << state << " ";
+  }
+  std::cout << "\n\nTokens:" << "\n";
+  for(auto pair : dfa.tokens){
+    std::cout << "\"" << pair.second << "\" at " << pair.first << "\n";
+  }
+  std::cout << "------------------------------\n\n";
+}
+
+} //end of namespace DFATest
+
 int main(){
-  std::cout << "SyntaxTree:" << std::endl << std::endl;
+  std::cout << "SyntaxTree:\n\n";
   SyntaxTreeTest::test("(a|b)*abb");
   SyntaxTreeTest::test(R"((\(|\|)*\(\|\|)");
   SyntaxTreeTest::test(R"((a|b)\*)");
@@ -86,4 +145,20 @@ int main(){
   SyntaxTreeTest::test("(a)");
   SyntaxTreeTest::test("(pop|blam)goesthe(weasel|squirrel)");
   SyntaxTreeTest::test(R"((a|\0)b)");
+
+  std::vector<std::tuple<std::string, std::string> > tokenRegexList =
+    {
+      std::make_tuple("a", "a"),
+      std::make_tuple("abb", "abb"),
+      std::make_tuple("abbb/ab", "abbb/ab"),
+      std::make_tuple("(a|b)*abb", "(a|b)*abb")
+    };
+
+  std::cout << "NFA:\n\n";
+  NFA nfa(tokenRegexList);
+  NFATest::test(nfa);
+
+  std::cout << "DFA:\n\n";
+  DFA dfa(nfa);
+  DFATest::test(dfa);
 }

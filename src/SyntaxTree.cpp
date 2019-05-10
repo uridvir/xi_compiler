@@ -1,8 +1,5 @@
 #include "SyntaxTree.h"
 
-#include <memory>
-#include <string>
-
 std::unique_ptr<Node> SyntaxTree::evaluate(std::string regex){
   auto result = std::make_unique<Node>();
   bool escape = false;
