@@ -15,7 +15,8 @@ class DFA {
   std::vector<std::map<char, int> > transitions;
   std::set<int> acceptStates;
   std::set<int> lookaheadStates;
-  std::map<int, std::string> tokens;
+  std::map<int, int> lookaheadMap; //maps accept states to lookaheads
+  std::map<int, std::string> tokens; //maps accept states to token names
   explicit DFA(NFA nfa);
 
   private:

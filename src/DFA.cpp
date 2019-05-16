@@ -34,15 +34,26 @@ void DFA::construct(){
   int i = 0;
   for(auto pair : Dtran){
     stateIndexMap.emplace(pair.first, i);
+    for(int j : nfa->lookaheadStates){
+      if(pair.first.count(j) == 1){
+        lookaheadStates.emplace(i);
+        break;
+      }
+    }
     for(int j : nfa->acceptStates){
       if(pair.first.count(j) == 1){
         acceptStates.emplace(i);
         tokens.emplace(i, nfa->tokens.at(j));
-      }
-    }
-    for(int j : nfa->lookaheadStates){
-      if(pair.first.count(j) == 1){
-        lookaheadStates.emplace(i);
+        if(nfa->lookaheadMap.count(j) == 1){
+          int lookaheadNFA = nfa->lookaheadMap[j];
+          for(auto map : stateIndexMap){
+            if(map.first.count(lookaheadNFA) == 1){
+              lookaheadMap.emplace(i, map.second);
+              break;
+            }
+          }
+        }
+        break;
       }
     }
     i++;

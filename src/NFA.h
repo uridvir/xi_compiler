@@ -15,12 +15,13 @@ class NFA {
   std::vector<std::map<int, std::optional<char> > > transitions;
   std::set<int> acceptStates;
   std::set<int> lookaheadStates;
-  std::map<int, std::string> tokens;
+  std::map<int, int> lookaheadMap; //maps accept states to lookahead states
+  std::map<int, std::string> tokens; //maps accept states to token names
   NFA() = default;
   explicit NFA(std::vector<std::tuple<std::string, std::string> > tokenRegexList);
 
   private:
-  int construct(const Node* root, int index);
+  std::tuple<int, std::optional<int> > construct(const Node* root, int index);
 };
 
 #endif
