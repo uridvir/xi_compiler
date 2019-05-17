@@ -17,7 +17,7 @@ NFA::NFA(std::vector<std::tuple<std::string, std::string> > tokenRegexList){
       lookaheadStates.emplace(std::get<1>(branch).value());
     }
     acceptStates.emplace(acceptState);
-    tokens.emplace(acceptState, std::get<0>(pair));
+    tokens.emplace(acceptState, std::get<1>(pair));
     index = acceptState + 1;
   }
 }
