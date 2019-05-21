@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <set>
 
-//TODO(uridvir): Finish function, add parentheses and other support
-//Converts Lex regex notation to Kleene notation
-std::string regexNotationConversion(std::string regex){
+//TODO(uridvir): Add support for ^ and $ operators
+//Processes character class operators as the first stage
+std::string characterClassProcess(std::string regex){
   std::string result;
   bool escape = false;
   auto kleeneReserved = std::set<char>({'(', ')', '|', '\\', '/', '*'});
@@ -31,14 +31,13 @@ std::string regexNotationConversion(std::string regex){
         }
         content += regex[j];
       }
-      result += regexNotationConversion("(" + content + ")" + regex.substr(i + 1));
+      result += "(" + content + ")";
+    }
+    else if(regex[i] == '.' && !escape){
+      result += characterClassProcess("[" + allCharacters + "]" + regex.substr(i + 1));
       break;
     }
-    if(regex[i] == '.' && !escape){
-      result += regexNotationConversion("[" + allCharacters + "]" + regex.substr(i + 1));
-      break;
-    }
-    if(regex[i] == '[' && !escape){
+    else if(regex[i] == '[' && !escape){
       std::string content;
       if(i + 1 < regex.length() && regex[i + 1] == '^'){
         auto unblocked = allCharactersSet;
@@ -52,6 +51,12 @@ std::string regexNotationConversion(std::string regex){
             break;
           }
           unblocked.erase(regex[j]);
+          if(j + 2 < regex.length() && regex[j + 1] == '-'){
+            for(char c = regex[j] + 1; c <= regex[j + 2]; c++){
+              unblocked.erase(c);
+            }
+            j += 2;
+          }
           escape = false;
         }
         int j = 0;
@@ -72,22 +77,33 @@ std::string regexNotationConversion(std::string regex){
             escape = true;
             continue;
           }
-          if(kleeneReserved.count(regex[j]) == 1 || otherReserved.count(regex[j]) == 1){
-            content += '\\';
-          }
           if(regex[j] == ']' && !escape){
             i = j;
             break;
           }
+          if(kleeneReserved.count(regex[j]) == 1 || otherReserved.count(regex[j]) == 1){
+            content += '\\';
+          }
           content += regex[j];
-          if(j + 1 < regex.length()){
+          if(j + 1 < regex.length() && regex[j + 1] != ']'){
             content += '|';
+          }
+          if(j + 2 < regex.length() && regex[j + 1] == '-'){
+            for(char c = regex[j] + 1; c <= regex[j + 2]; c++){
+              content += c;
+              if(c + 1 <= regex[j + 2] || (j + 3 < regex.length() && regex[j + 3] != ']')){
+                content += '|';
+              }
+            }
+            j += 2;
           }
           escape = false;
         }
       }
-    result += regexNotationConversion("(" + content + ")" + regex.substr(i + 1));
-    break;
+      result += "(" + content + ")";
+    }
+    else if(!escape){
+      result += regex[i];
     }
   }
   return result;
