@@ -34,8 +34,7 @@ std::string characterClassProcess(std::string regex){
       result += "(" + content + ")";
     }
     else if(regex[i] == '.' && !escape){
-      result += characterClassProcess("[" + allCharacters + "]" + regex.substr(i + 1));
-      break;
+      result += characterClassProcess("[" + allCharacters + "]");
     }
     else if(regex[i] == '[' && !escape){
       std::string content;
@@ -81,14 +80,11 @@ std::string characterClassProcess(std::string regex){
             i = j;
             break;
           }
-          if(kleeneReserved.count(regex[j]) == 1 || otherReserved.count(regex[j]) == 1){
-            content += '\\';
-          }
           content += regex[j];
           if(j + 1 < regex.length() && regex[j + 1] != ']'){
             content += '|';
           }
-          if(j + 2 < regex.length() && regex[j + 1] == '-'){
+          if(j + 2 < regex.length() && regex[j + 1] == '-' && regex[j + 2] != ']'){
             for(char c = regex[j] + 1; c <= regex[j + 2]; c++){
               content += c;
               if(c + 1 <= regex[j + 2] || (j + 3 < regex.length() && regex[j + 3] != ']')){
@@ -102,9 +98,94 @@ std::string characterClassProcess(std::string regex){
       }
       result += "(" + content + ")";
     }
-    else if(!escape){
+    else {
+      if(escape && (kleeneReserved.count(regex[i]) == 1 || otherReserved.count(regex[i]) == 1)){
+        result += '\\';
+      }
       result += regex[i];
     }
+    escape = false;
+  }
+  return result;
+}
+
+std::string regexNotationConversion(std::string regex){
+  regex = characterClassProcess(std::move(regex));
+  std::string result;
+  bool escape = false;
+  for(int i = 0; i < regex.length(); i++){
+    if(regex[i] == '\\' && !escape){
+      escape = true;
+      continue;
+    }
+    if(regex[i] == '(' && !escape){
+      int depth = 1;
+      std::string contents;
+      for(int j = i + 1; j < regex.length(); j++){
+        if(regex[j] == '\\' && !escape){
+          escape = true;
+          continue;
+        }
+        if(regex[j] == '(' && !escape){
+          depth++;
+        }
+        if(regex[j] == ')' && !escape){
+          depth--;
+          if(depth == 0){
+            contents = regexNotationConversion(regex.substr(i + 1, j - i - 1));
+            i = j;
+            break;
+          }
+        }
+        escape = false;
+      }
+      if(i + 1 < regex.length() && regex[i + 1] == '+'){
+        result.append("(" + contents + ")(").append(contents + ")*");
+        i++;
+      }
+      else if(i + 1 < regex.length() && regex[i + 1] == '?'){
+        result += "((" + contents + ")|\\0)";
+        i++;
+      }
+      //TODO(uridvir): Add support for definitions here
+      else if(i + 2 < regex.length() && regex[i + 1] == '{'){
+        std::string first;
+        std::string second;
+        bool beforeComma = true;
+        for(int j = i + 2; j < regex.length(); j++){
+          if(regex[j] == ','){
+            beforeComma = false;
+            continue;
+          }
+          if(regex[j] == '}'){
+            i = j;
+            break;
+          }
+          if(beforeComma){
+            first += regex[j];
+          }
+          else {
+            second += regex[j];
+          }
+        }
+        int a = std::stoi(first);
+        int b = std::stoi(second);
+        result += '(';
+        for(int j = a; j <= b; j++){
+          for(int k = 0; k < j; k++){
+            result += "(" + contents + ")";
+          }
+          if(j != b){
+            result += '|';
+          }
+        }
+        result += ')';
+      }
+    }
+    else {
+      result += regex[i];
+    }
+    escape = false;
   }
   return result;
 }

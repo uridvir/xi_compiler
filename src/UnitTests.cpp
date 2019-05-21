@@ -253,6 +253,14 @@ namespace RegexConversionCharacterClassTest {
   }
 } //end of namespace RegexConversionCharacterClassTest
 
+namespace RegexConversionTest {
+  void test(const std::string& regex){
+    std::cout << "Input: " + regex + "\n";
+    std::cout << "Output: " + regexNotationConversion(regex) + "\n";
+    std::cout << "------------------------------\n\n";
+  }
+} //end of namespace RegexConversionTest
+
 int main(){
   std::cout << "SyntaxTree:\n\n";
   SyntaxTreeTest::test("(a|b)*abb");
@@ -295,5 +303,14 @@ int main(){
   std::cout << "RegexNotationConversion characterClassProcess:\n\n";
   RegexConversionCharacterClassTest::test("[A-Za-z]([A-Za-z]|[0-9])*");
   RegexConversionCharacterClassTest::test("[abcde]");
-  RegexConversionCharacterClassTest::test("[a-e]");
+  RegexConversionCharacterClassTest::test("[+-]");
+  RegexConversionCharacterClassTest::test("[+\\-]");
+  RegexConversionCharacterClassTest::test("\\.a+");
+  RegexConversionCharacterClassTest::test("[0-9]+(\\.[0-9]+)?(E[+-]?[0-9]+)?");
+
+  std::cout << "RegexNotationConversion regexNotationConversion:\n\n";
+  RegexConversionTest::test("(a)+");
+  RegexConversionTest::test("(a)?");
+  RegexConversionTest::test("[a-e]{1,5}");
+  RegexConversionTest::test("[0-9]+(\\.[0-9]+)?(E[+-]?[0-9]+)?");
 }

@@ -9,5 +9,6 @@ const std::string allCharacters = R"( !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHI
 const std::set<char> allCharactersSet = std::set<char>(allCharacters.begin(), allCharacters.end());
 
 std::string characterClassProcess(std::string regex);
+std::string regexNotationConversion(std::string regex);
 
 #endif
