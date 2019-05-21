@@ -1,6 +1,6 @@
 #include "NFA.h"
 
-//Takes list of regexes, constructs them, and then links them to state 0 with e-transitions
+//Takes list of regexes, constructs them, and then creates e-transitions from state 0 to all the resulting mini-NFAs
 NFA::NFA(std::vector<std::tuple<std::string, std::string> > tokenRegexList){
   transitions.resize(1);
   acceptStates = {};
@@ -22,8 +22,12 @@ NFA::NFA(std::vector<std::tuple<std::string, std::string> > tokenRegexList){
   }
 }
 
-//Constructs the NFA transition table for "root" starting at the given index
-//Returns a tuple with the new index and the location of any lookahead operator
+/*
+ * construct implements the McNaughton-Yamada-Thompson algorithm to convert root into an NFA. root is a pointer to a
+ * Node object which represents the syntax tree for a regular expression. construct assigns the start state of the NFA
+ * to the value of index, and returns a tuple with the accept state of the NFA and the location of the lookahead
+ * operator, if it found one.
+ */
 std::tuple<int, std::optional<int> > NFA::construct(const Node* root, int index){
   auto result = std::make_tuple(-1, std::optional<int>());
   switch(root->type){

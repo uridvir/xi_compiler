@@ -67,7 +67,7 @@ void DFA::construct(){
   }
 }
 
-//Returns the set of states that can be reached through e-transitions from "states"
+//Returns the set of states that can be reached through e-transitions from the set of states "states"
 std::set<int> DFA::e_closure(std::set<int> states){
   std::vector<int> stack;
   stack.reserve(states.size());
