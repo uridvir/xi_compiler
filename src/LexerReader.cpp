@@ -6,7 +6,7 @@
 
 LexerReader::LexerReader(const std::string& filename){
   std::map<std::string, std::string> definitions;
-  enum {_frontAuxiliary, _definitions, _translation, _backAuxiliary} mode = _definitions;
+  enum {_definitions, _translation} mode = _definitions;
   std::ifstream file(filename);
   bool onNewLine = true;
   bool encounteredMarker = false;
@@ -22,6 +22,9 @@ LexerReader::LexerReader(const std::string& filename){
       linePlace = _firstSpace;
       if(c == '%'){
         encounteredMarker = true;
+        continue;
+      }
+      if(c == '\n'){
         continue;
       }
     }
@@ -45,19 +48,8 @@ LexerReader::LexerReader(const std::string& filename){
         break;
     }
     switch(mode){
-      case _frontAuxiliary:
-        if(encounteredMarker && c == '}'){
-          mode = _definitions;
-        }
-        else {
-          frontAuxiliary += c;
-        }
-        break;
       case _definitions:
-        if(encounteredMarker && c == '{'){
-          mode = _frontAuxiliary;
-        }
-        else if(encounteredMarker && c == '%'){
+        if(encounteredMarker && c == '%'){
           mode = _translation;
         }
         else if(linePlace == _firstWord){
@@ -76,28 +68,20 @@ LexerReader::LexerReader(const std::string& filename){
         }
         break;
       case _translation:
-        if(encounteredMarker && c == '%'){
-          mode = _backAuxiliary;
-        }
-        else if(linePlace == _firstWord){
+        if(linePlace == _firstWord){
           first += c;
         }
         else if(linePlace == _secondWord){
           if(c == '\n'){
-            second.erase(second.begin()); //Erase the '{' at the start
             while(std::isspace(second.back()) != 0){
               second.erase(second.end());
             }
-            second.erase(second.end()); //Erase the '}' at the end
-            regexActionMap.emplace(regexNotationConversion(first, definitions), second);
+            regexNameList.emplace_back(std::make_tuple(regexNotationConversion(second, definitions), first));
           }
           else {
             second += c;
           }
         }
-        break;
-      case _backAuxiliary:
-        backAuxiliary += c;
         break;
     }
     onNewLine = (c == '\n');
@@ -121,9 +105,19 @@ std::string LexerReader::characterClassProcess(std::string regex){
       std::string content;
       for(int j = i + 1; j < regex.length(); j++){
         if(kleeneReserved.count(regex[j]) == 1){
-          if(regex[j] == '\\' && j + 1 < regex.length() && regex[j + 1] == '0'){
-            content += "\\0";
-            continue;
+          if(regex[j] == '\\' && j + 1 < regex.length()){
+            if(regex[j + 1] == '0'){
+              content += "\\0";
+              continue;
+            }
+            if(regex[j + 1] == 't'){
+              content += '\t';
+              continue;
+            }
+            if(regex[j + 1] == 'n'){
+              content += '\n';
+              continue;
+            }
           }
           content += '\\';
         }
@@ -145,6 +139,14 @@ std::string LexerReader::characterClassProcess(std::string regex){
         for(int j = i + 2; j < regex.length(); j++){
           if(regex[j] == '\\' && !escape){
             escape = true;
+            continue;
+          }
+          if(regex[j] == 't' && escape){
+            unblocked.erase('\t');
+            continue;
+          }
+          if(regex[j] == 'n' && escape){
+            unblocked.erase('\n');
             continue;
           }
           if(regex[j] == ']' && !escape){
@@ -176,6 +178,14 @@ std::string LexerReader::characterClassProcess(std::string regex){
         for(int j = i + 1; j < regex.length(); j++){
           if(regex[j] == '\\'){
             escape = true;
+            continue;
+          }
+          if(regex[j] == 't' && escape){
+            content += '\t';
+            continue;
+          }
+          if(regex[j] == 'n' && escape){
+            content += '\n';
             continue;
           }
           if(regex[j] == ']' && !escape){

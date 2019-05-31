@@ -4,21 +4,19 @@
 #include <map>
 #include <set>
 #include <string>
+#include <tuple>
+#include <vector>
 
 class LexerReader {
   private:
     const std::string allCharacters = R"( !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`)"
-          R"(abcdefghijklmnopqrstuvwxyz{|}~)";
+          R"(abcdefghijklmnopqrstuvwxyz{|}~)" "\t\n";
     const std::set<char> allCharactersSet = std::set<char>(allCharacters.begin(), allCharacters.end());
 
     std::string characterClassProcess(std::string regex);
 
   public:
-    //Text to be inserted in lexer source file verbatim
-    std::string frontAuxiliary;
-    std::string backAuxiliary;
-
-    std::map<std::string, std::string> regexActionMap;
+    std::vector<std::tuple<std::string, std::string> > regexNameList;
 
     explicit LexerReader(const std::string& filename);
 

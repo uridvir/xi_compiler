@@ -1,6 +1,6 @@
 #include "DFA.h"
+//#include "LexerReader.h"
 #include "NFA.h"
-#include "RegexNotationConversion.h"
 #include "SyntaxTree.h"
 
 #include <fstream>
@@ -245,6 +245,7 @@ namespace FakeLexerTest {
 
 } //end of namespace FakeLexerTest
 
+/*
 namespace RegexConversionCharacterClassTest {
   void test(const std::string& regex){
     std::cout << "Input: " + regex + "\n";
@@ -255,11 +256,13 @@ namespace RegexConversionCharacterClassTest {
 
 namespace RegexConversionTest {
   void test(const std::string& regex){
+
     std::cout << "Input: " + regex + "\n";
     std::cout << "Output: " + regexNotationConversion(regex) + "\n";
     std::cout << "------------------------------\n\n";
   }
 } //end of namespace RegexConversionTest
+*/
 
 int main(){
   std::cout << "SyntaxTree:\n\n";
@@ -300,6 +303,7 @@ int main(){
   DFA _dfa(_nfa);
   FakeLexerTest::test(&_dfa, input);
 
+  /*
   std::cout << "RegexNotationConversion characterClassProcess:\n\n";
   RegexConversionCharacterClassTest::test("[A-Za-z]([A-Za-z]|[0-9])*");
   RegexConversionCharacterClassTest::test("[abcde]");
@@ -313,4 +317,5 @@ int main(){
   RegexConversionTest::test("(a)?");
   RegexConversionTest::test("[a-e]{1,5}");
   RegexConversionTest::test("[0-9]+(\\.[0-9]+)?(E[+-]?[0-9]+)?");
+  */
 }
