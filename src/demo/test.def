@@ -1,0 +1,20 @@
+delim       [ \t\n]
+ws          {delim}+
+letter      [A-Za-z]
+digit       [0-9]
+id          {letter}({letter}|{digit})*
+number      {digit}+(\.{digit}+)?(E[+-]?{digit}+)?
+
+%%
+
+ws          {ws}
+if          if
+then        then
+id          {id}
+number      {number}
+LT          "<"
+LE          "<="
+EQ          "="
+NE          "!="
+GT          ">"
+GE          ">="

@@ -13,7 +13,7 @@ class LexerReader {
           R"(abcdefghijklmnopqrstuvwxyz{|}~)" "\t\n";
     const std::set<char> allCharactersSet = std::set<char>(allCharacters.begin(), allCharacters.end());
 
-    std::string characterClassProcess(std::string regex);
+    std::string characterClassProcess(std::string regex, std::map<std::string, std::string>& definitions);
 
   public:
     std::vector<std::tuple<std::string, std::string> > regexNameList;
@@ -21,7 +21,7 @@ class LexerReader {
     explicit LexerReader(const std::string& filename);
 
     //Converts to Kleene notation
-    std::string regexNotationConversion(std::string regex, std::map<std::string, std::string> definitions);
+    std::string regexNotationConversion(std::string regex, std::map<std::string, std::string>& definitions);
 };
 
 #endif

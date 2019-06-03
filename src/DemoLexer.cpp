@@ -3,11 +3,11 @@
 #include "NFA.h"
 #include "SyntaxTree.h"
 
+#include <cstring>
 #include <fstream>
 #include <iostream>
-#include <string.h>
 
-DFA* dfa;
+DFA* dfa = nullptr;
 int state;
 int offset;
 std::optional<int> lastAcceptState;
@@ -59,7 +59,8 @@ void initialize(){
 void runLexer(const std::string& definitionFile, const std::string& sourceFile){
   LexerReader reader(definitionFile);
   NFA nfa(reader.regexNameList);
-  *dfa = DFA(nfa);
+  DFA _dfa(nfa);
+  dfa = &_dfa;
 
   const int bufferSize = 4096;
   std::vector<char> buffer1(bufferSize, 0);
@@ -110,43 +111,52 @@ void runLexer(const std::string& definitionFile, const std::string& sourceFile){
 }
 
 int main(int argc, char* argv[]){
-  std::string definitionFile;
-  std::string sourceFile;
-  std::string errorMessage = "Type \"" + std::string(argv[0]) + " --help\" for correct usage.";
-  
-  if(argc == 1){
-    std::cout << errorMessage << std::endl;
-    return 0;
+  std::vector<std::string> args;
+  for(char* str : std::vector<char*>(argv, argv + argc)){
+    args.emplace_back(std::string(str));
   }
 
+  std::string definitionFile;
+  std::string sourceFile;
+  std::string errorMessage = "Type \"" + args[0] + " --help\" for correct usage.";
+
+  //Debugging
+  definitionFile = "demo/test.def";
+  sourceFile = "demo/test.txt";
+
   int i = 1;
-  while(i < argc){
-    if((strcmp(argv[i], "-definition") == 0 || strcmp(argv[i], "-def") == 0) && i + 1 < argc){
-      definitionFile = argv[i + 1];
+  while(i < args.size()){
+    if((args[i] == "-definition" || args[i] == "-def") && i + 1 < argc){
+      definitionFile = args[i + 1];
       i += 2;
     }
-    else if((strcmp(argv[i], "-source") == 0 || strcmp(argv[i], "-src") == 0) && i + 1 < argc){
-      sourceFile = argv[i + 1];
+    else if((args[i] == "-source" || args[i] == "-src") && i + 1 < argc){
+      sourceFile = args[i + 1];
       i += 2;
     }
-    else if(strcmp(argv[i], "--help") == 0){
+    else if(args[i] == "--help"){
       std::cout << std::endl;
       std::cout << "Uri's Ma'avar Compiler Project" << std::endl;
       std::cout << std::endl;
       std::cout << "Usage:" << std::endl;
-      std::cout << argv[0] << " -definition [filename] -source [file]" << std::endl;
+      std::cout << args[0] << " -definition [filename] -source [file]" << std::endl;
       std::cout << std::endl;
       std::cout << "-definition     Sets the definition file for the lexer (shortcut is -def)" << std::endl;
       std::cout << "-source         Sets the source file which the lexer shall lex (shortcut is -src)" << std::endl;
       std::cout << "--help          Summons this help menu" << std::endl;
-      i += 1;
+      return 0;
     }
     else {
       std::cout << errorMessage << std::endl;
       return 0;
     }
   }
-  
+
+  if(definitionFile.empty() || sourceFile.empty()){
+    std::cout << errorMessage << std::endl;
+    return 0;
+  }
+
   runLexer(definitionFile, sourceFile);
   return 0;
 }

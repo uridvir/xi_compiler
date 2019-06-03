@@ -14,14 +14,15 @@ LexerReader::LexerReader(const std::string& filename){
   std::string first;
   std::string second;
   enum {_firstSpace, _firstWord, _secondSpace, _secondWord} linePlace = _firstSpace;
-  while(file.gcount() != 0){
-    file >> c;
+  while(!file.eof()){
+    file.get(c);
     if(onNewLine){
       first = "";
       second = "";
       linePlace = _firstSpace;
       if(c == '%'){
         encounteredMarker = true;
+        onNewLine = false;
         continue;
       }
       if(c == '\n'){
@@ -90,8 +91,8 @@ LexerReader::LexerReader(const std::string& filename){
 }
 
 //TODO(uridvir): Add support for ^ and $ operators
-//Deals with "s", ., [s], [^s] operators
-std::string LexerReader::characterClassProcess(std::string regex){
+//Deals with "s", ., [s], [^s] and {definition} operators
+std::string LexerReader::characterClassProcess(std::string regex, std::map<std::string, std::string>& definitions){
   std::string result;
   bool escape = false;
   auto kleeneReserved = std::set<char>({'(', ')', '|', '\\', '/', '*'});
@@ -130,7 +131,7 @@ std::string LexerReader::characterClassProcess(std::string regex){
       result += "(" + content + ")";
     }
     else if(regex[i] == '.' && !escape){
-      result += characterClassProcess("[" + allCharacters + "]");
+      result += characterClassProcess("[" + allCharacters + "]", definitions);
     }
     else if(regex[i] == '[' && !escape){
       std::string content;
@@ -176,28 +177,31 @@ std::string LexerReader::characterClassProcess(std::string regex){
       }
       else {
         for(int j = i + 1; j < regex.length(); j++){
-          if(regex[j] == '\\'){
-            escape = true;
-            continue;
-          }
-          if(regex[j] == 't' && escape){
-            content += '\t';
-            continue;
-          }
-          if(regex[j] == 'n' && escape){
-            content += '\n';
-            continue;
-          }
           if(regex[j] == ']' && !escape){
             i = j;
             break;
           }
-          content += regex[j];
+          if(regex[j] == 't' && escape){
+            content += '\t';
+          }
+          else if(regex[j] == 'n' && escape){
+            content += '\n';
+          }
+          else {
+            content += regex[j];
+          }
+          if(regex[j] == '\\'){
+            escape = true;
+            continue;
+          }
           if(j + 1 < regex.length() && regex[j + 1] != ']'){
             content += '|';
           }
           if(j + 2 < regex.length() && regex[j + 1] == '-' && regex[j + 2] != ']'){
             for(char c = regex[j] + 1; c <= regex[j + 2]; c++){
+              if(kleeneReserved.count(c) == 1 || otherReserved.count(c) == 1){
+                content += '\\';
+              }
               content += c;
               if(c + 1 <= regex[j + 2] || (j + 3 < regex.length() && regex[j + 3] != ']')){
                 content += '|';
@@ -210,6 +214,17 @@ std::string LexerReader::characterClassProcess(std::string regex){
       }
       result += "(" + content + ")";
     }
+    else if(regex[i] == '{'){
+      std::string name;
+      for(int j = i + 1; j < regex.length(); j++){
+        if(regex[j] == '}'){
+          i = j;
+          break;
+        }
+        name += regex[j];
+      }
+      result += "(" + definitions[name] + ")";
+    }
     else {
       if(escape && (kleeneReserved.count(regex[i]) == 1 || otherReserved.count(regex[i]) == 1)){
         result += '\\';
@@ -221,14 +236,15 @@ std::string LexerReader::characterClassProcess(std::string regex){
   return result;
 }
 
-//Calls characterClassProcess and then deals with +, ?, and {m, n} operators
-std::string LexerReader::regexNotationConversion(std::string regex, std::map<std::string, std::string> definitions){
-  regex = characterClassProcess(std::move(regex));
+//Calls characterClassProcess and then deals with +, ? and {m, n} operators
+std::string LexerReader::regexNotationConversion(std::string regex, std::map<std::string, std::string>& definitions){
+  regex = characterClassProcess(std::move(regex), definitions);
   std::string result;
   bool escape = false;
   for(int i = 0; i < regex.length(); i++){
     if(regex[i] == '\\' && !escape){
       escape = true;
+      result += '\\';
       continue;
     }
     if(regex[i] == '(' && !escape){
@@ -260,52 +276,43 @@ std::string LexerReader::regexNotationConversion(std::string regex, std::map<std
         result += "((" + contents + ")|\\0)";
         i++;
       }
-      else if(i + 2 < regex.length() && regex[i + 1] == '{'){
-        auto digits = std::set<char>({'1','2','3','4','5','6','7','8','9','0'});
-        if(digits.count(regex[i + 2]) == 1){
-          std::string first;
-          std::string second;
-          bool beforeComma = true;
-          for(int j = i + 2; j < regex.length(); j++){
-            if(regex[j] == ','){
-              beforeComma = false;
-              continue;
-            }
-            if(regex[j] == '}'){
-              i = j;
-              break;
-            }
-            if(beforeComma){
-              first += regex[j];
-            }
-            else {
-              second += regex[j];
-            }
+      else if(i + 2 < regex.length() && regex[i + 1] == '{'
+          && std::set<char>({'1','2','3','4','5','6','7','8','9','0'}).count(regex[i + 2]) == 1){
+
+        std::string first;
+        std::string second;
+        bool beforeComma = true;
+        for(int j = i + 2; j < regex.length(); j++){
+          if(regex[j] == ','){
+            beforeComma = false;
+            continue;
           }
-          int a = std::stoi(first);
-          int b = std::stoi(second);
-          result += '(';
-          for(int j = a; j <= b; j++){
-            for(int k = 0; k < j; k++){
-              result += "(" + contents + ")";
-            }
-            if(j != b){
-              result += '|';
-            }
+          if(regex[j] == '}'){
+            i = j;
+            break;
           }
-          result += ')';
+          if(beforeComma){
+            first += regex[j];
+          }
+          else {
+            second += regex[j];
+          }
         }
-        else {
-          std::string name;
-          for(int j = i + 2; j < regex.length(); j++){
-            if(regex[j] == '}'){
-              i = j;
-              break;
-            }
-            name += regex[j];
+        int a = std::stoi(first);
+        int b = std::stoi(second);
+        result += '(';
+        for(int j = a; j <= b; j++){
+          for(int k = 0; k < j; k++){
+            result += "(" + contents + ")";
           }
-          result += definitions[name];
+          if(j != b){
+            result += '|';
+          }
         }
+        result += ')';
+      }
+      else {
+        result += "(" + contents + ")";
       }
     }
     else {
