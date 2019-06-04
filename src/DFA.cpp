@@ -19,7 +19,7 @@ void DFA::construct(){
     unmarked.erase(unmarked.begin());
     Dstates.emplace(states);
     Dtran.emplace(states, std::map<char, std::set<int> >());
-    for(char c : getAlphabet(states)){
+    for(char c : constants::alphabetSet){
       std::set<int> newStates = e_closure(move(states, c));
       if(newStates.empty()){
         continue;
@@ -82,19 +82,6 @@ std::set<int> DFA::e_closure(std::set<int> states){
       if(!transition.second.has_value() && result.count(transition.first) == 0){
         result.emplace(transition.first);
         stack.emplace_back(transition.first);
-      }
-    }
-  }
-  return result;
-}
-
-//Returns the set of letters which the given set of states has transitions on
-std::set<char> DFA::getAlphabet(std::set<int> states){
-  std::set<char> result;
-  for(int state : states){
-    for(auto transition : nfa->transitions[state]){
-      if(transition.second.has_value()){
-        result.emplace(transition.second.value());
       }
     }
   }

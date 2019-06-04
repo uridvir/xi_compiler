@@ -121,8 +121,8 @@ int main(int argc, char* argv[]){
   std::string errorMessage = "Type \"" + args[0] + " --help\" for correct usage.";
 
   //Debugging
-  definitionFile = "demo/test.def";
-  sourceFile = "demo/test.txt";
+  definitionFile = "demo/test1.def";
+  sourceFile = "demo/test1.txt";
 
   int i = 1;
   while(i < args.size()){

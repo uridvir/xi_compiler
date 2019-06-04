@@ -1,6 +1,7 @@
 #ifndef DFA_H
 #define DFA_H
 
+#include "constants.h"
 #include "NFA.h"
 
 #include <map>
@@ -23,7 +24,6 @@ class DFA {
     NFA* nfa;
     void construct();
     std::set<int> e_closure(std::set<int> states);
-    std::set<char> getAlphabet(std::set<int> states);
     std::set<int> move(std::set<int> states, char symbol);
 };
 

@@ -131,12 +131,12 @@ std::string LexerReader::characterClassProcess(std::string regex, std::map<std::
       result += "(" + content + ")";
     }
     else if(regex[i] == '.' && !escape){
-      result += characterClassProcess("[" + allCharacters + "]", definitions);
+      result += characterClassProcess("[" + constants::alphabetString + "]", definitions);
     }
     else if(regex[i] == '[' && !escape){
       std::string content;
       if(i + 1 < regex.length() && regex[i + 1] == '^'){
-        auto unblocked = allCharactersSet;
+        auto unblocked = constants::alphabetSet;
         for(int j = i + 2; j < regex.length(); j++){
           if(regex[j] == '\\' && !escape){
             escape = true;

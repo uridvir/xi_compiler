@@ -276,10 +276,13 @@ int main(){
 
   std::vector<std::tuple<std::string, std::string> > tokenRegexList1 =
     {
-      std::make_tuple("a", "a"),
-      std::make_tuple("abb", "abb"),
-      std::make_tuple("abbb/ab", "abbb/ab"),
-      std::make_tuple("(a|b)*abb", "(a|b)*abb")
+      //std::make_tuple("a", "a"),
+      //std::make_tuple("abb", "abb"),
+      //std::make_tuple("abbb/ab", "abbb/ab"),
+      //std::make_tuple("(a|b)*abb", "(a|b)*abb"),
+      std::make_tuple("(0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*"
+          "(.(0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*|\\0)"
+          "(E((+|-)|\\0)(0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*|\\0)", "number")
     };
 
   std::cout << "NFA:\n\n";
