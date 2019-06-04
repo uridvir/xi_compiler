@@ -100,6 +100,7 @@ std::string LexerReader::characterClassProcess(std::string regex, std::map<std::
   for(int i = 0; i < regex.length(); i++){
     if(regex[i] == '\\' && !escape){
       escape = true;
+      result += '\\';
       continue;
     }
     if(regex[i] == '"' && !escape){
@@ -107,10 +108,6 @@ std::string LexerReader::characterClassProcess(std::string regex, std::map<std::
       for(int j = i + 1; j < regex.length(); j++){
         if(kleeneReserved.count(regex[j]) == 1){
           if(regex[j] == '\\' && j + 1 < regex.length()){
-            if(regex[j + 1] == '0'){
-              content += "\\0";
-              continue;
-            }
             if(regex[j + 1] == 't'){
               content += '\t';
               continue;
@@ -226,9 +223,6 @@ std::string LexerReader::characterClassProcess(std::string regex, std::map<std::
       result += "(" + definitions[name] + ")";
     }
     else {
-      if(escape && (kleeneReserved.count(regex[i]) == 1 || otherReserved.count(regex[i]) == 1)){
-        result += '\\';
-      }
       result += regex[i];
     }
     escape = false;

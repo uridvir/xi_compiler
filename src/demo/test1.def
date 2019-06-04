@@ -1,6 +1,6 @@
 delim       [ \t\n]
 ws          {delim}+
-letter      [a-zA-Z]
+letter      [a-b]
 digit       [0-9]
 id          {letter}({letter}|{digit})*
 number      {digit}+(\.{digit}+)?(E[+-]?{digit}+)?

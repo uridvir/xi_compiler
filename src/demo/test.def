@@ -8,8 +8,9 @@ number      {digit}+(\.{digit}+)?(E[+-]?{digit}+)?
 %%
 
 ws          {ws}
-if          if
-then        then
+if          "if"
+then        "then"
+else        "else"
 id          {id}
 number      {number}
 LT          "<"

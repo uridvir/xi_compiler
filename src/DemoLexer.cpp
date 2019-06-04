@@ -120,10 +120,6 @@ int main(int argc, char* argv[]){
   std::string sourceFile;
   std::string errorMessage = "Type \"" + args[0] + " --help\" for correct usage.";
 
-  //Debugging
-  definitionFile = "demo/test1.def";
-  sourceFile = "demo/test1.txt";
-
   int i = 1;
   while(i < args.size()){
     if((args[i] == "-definition" || args[i] == "-def") && i + 1 < argc){
