@@ -11,8 +11,8 @@ TODO/Agenda for Xi Compiler Project
 
 ## Current work
 
-The next step is to start work on the lexer generator itself, and to iron out any bugs from there. The code I suspect is
-most buggy is the Lex to Kleene regex translation code I just wrote.
+I'm no longer going to work on an actual lexer generator, instead on a demo lexer which creates the automata from a
+definition file and then lexes a source file on the fly.
 
 Progress:
 --------
@@ -25,7 +25,7 @@ Progress:
   5. Minimize DFA states
 
 * Real
-  1. Lex to Kleene translation (mostly complete)
+  1. Lex to Kleene translation (complete)
   2. Regex to syntax tree (complete)
   3. Syntax trees and token labels to super NFA (complete)
   4. Convert super-NFA into DFA (complete)
