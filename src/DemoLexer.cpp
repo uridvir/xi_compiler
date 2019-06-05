@@ -78,9 +78,14 @@ void runLexer(const std::string& definitionFile, const std::string& sourceFile){
     //printBuffer(buffer2, "buffer2"); //debug
     //std::cout << "on buffer" << (onFirstBuffer ? "1" : "2") << std::endl; //debug
     int forward;
+    bool justPrintedNewline = false;
     if(fin.gcount() != 0){
       for(forward = 0; forward < bufferSize; forward++){
-        auto result = feed(buffer[forward]);
+        char c = buffer[forward];
+        if(c == '\r'){
+          break;
+        }
+        auto result = feed(c);
         auto token = std::get<0>(result);
         if(token.has_value()){
           int offset = std::get<1>(result);
@@ -96,11 +101,17 @@ void runLexer(const std::string& definitionFile, const std::string& sourceFile){
           //std::cout << "forward = " << forward << std::endl; //debug
           //std::cout << "lexemeBegin = " << lexemeBegin << std::endl; //debug
           initialize();
-          std::cout << token.value() + " token\n";
+          std::cout << token.value() + " ";
         }
         else if(buffer[forward] == 0){
           break;
         }
+        if(c == '\n' && !justPrintedNewline){
+          std::cout << "\n";
+          justPrintedNewline = true;
+          continue;
+        }
+        justPrintedNewline = false;
       }
     onFirstBuffer = !onFirstBuffer;
     }

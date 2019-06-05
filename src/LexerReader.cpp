@@ -106,7 +106,11 @@ std::string LexerReader::characterClassProcess(std::string regex, std::map<std::
     if(regex[i] == '"' && !escape){
       std::string content;
       for(int j = i + 1; j < regex.length(); j++){
-        if(kleeneReserved.count(regex[j]) == 1){
+        if(regex[j] == '"'){
+          i = j;
+          break;
+        }
+        if(kleeneReserved.count(regex[j]) == 1 || otherReserved.count(regex[j]) == 1){
           if(regex[j] == '\\' && j + 1 < regex.length()){
             if(regex[j + 1] == 't'){
               content += '\t';
@@ -118,10 +122,6 @@ std::string LexerReader::characterClassProcess(std::string regex, std::map<std::
             }
           }
           content += '\\';
-        }
-        if(regex[j] == '"'){
-          i = j;
-          break;
         }
         content += regex[j];
       }
@@ -211,7 +211,7 @@ std::string LexerReader::characterClassProcess(std::string regex, std::map<std::
       }
       result += "(" + content + ")";
     }
-    else if(regex[i] == '{'){
+    else if(regex[i] == '{' && !escape){
       std::string name;
       for(int j = i + 1; j < regex.length(); j++){
         if(regex[j] == '}'){

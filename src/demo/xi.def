@@ -1,0 +1,49 @@
+delim                                 [ \t]
+gap                                   {delim}*
+letter                                [A-Za-z]
+digit                                 [0-9]
+id                                    {letter}({letter}|{digit}|_)*
+primitive                             "int"|"bool"
+array                                 {primitive}("[]")+
+type                                  {primitive}|{array}
+var-type-pair                         {id}{gap}:{gap}{type}
+
+%%
+
+use                                   "use"
+if                                    "if"
+while                                 "while"
+else                                  "else"
+return                                "return"
+length                                "length"
+print                                 "print"
+int                                   "int"
+bool                                  "bool"
+true                                  "true"
+false                                 "false"
+number                                {digit}+(\.{digit}+)?(E[+-]?{digit}+)?
+string-literal                        \"[^\n]*\"
+comment                               \/\/[^\n]*\n
+var-init                              {var-type-pair}/{gap}=
+var-id                                {id}
+;                                     ";"
+(                                     "("
+)                                     ")"
+{                                     "{"
+}                                     "}"
+[                                     "["
+]                                     "]"
+,                                     ","
+=                                     "="
+!                                     "!"
+*                                     "*"
++                                     "+"
+-                                     "-"
+<                                     "<"
+<=                                    "<="
+>                                     ">"
+>=                                    ">="
+==                                    "=="
+!=                                    "!="
+&                                     "&"
+|                                     "|"
