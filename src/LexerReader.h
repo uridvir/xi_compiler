@@ -10,16 +10,12 @@
 #include <vector>
 
 class LexerReader {
-  private:
-    std::string characterClassProcess(std::string regex, std::map<std::string, std::string>& definitions);
-
   public:
     std::vector<std::tuple<std::string, std::string> > regexNameList;
 
+    static std::string characterClassProcess(std::string regex, std::map<std::string, std::string>& definitions);
+    static std::string regexNotationConversion(std::string regex, std::map<std::string, std::string>& definitions);
     explicit LexerReader(const std::string& filename);
-
-    //Converts to Kleene notation
-    std::string regexNotationConversion(std::string regex, std::map<std::string, std::string>& definitions);
 };
 
 #endif

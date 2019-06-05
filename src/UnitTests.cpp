@@ -1,5 +1,5 @@
 #include "DFA.h"
-//#include "LexerReader.h"
+#include "LexerReader.h"
 #include "NFA.h"
 #include "SyntaxTree.h"
 
@@ -138,131 +138,23 @@ namespace DFATest {
 
 } //end of namespace DFATest
 
-namespace FakeLexerTest {
+namespace CharacterClassTest {
 
-  DFA* dfa;
-
-  int state;
-  int offset;
-  std::optional<int> lastAcceptState;
-  std::optional<int> lastLookaheadState;
-  int lastAcceptOffset;
-  int lastLookaheadOffset;
-
-  std::tuple<std::optional<std::string>, int> feed(char c){
-    //std::cout << "ate '" << c << "', state = " << state << std::endl; //debug
-    offset++;
-    auto token = std::optional<std::string>();
-    if(dfa->transitions[state].count(c) == 1){
-      state = dfa->transitions[state].at(c);
-      if(dfa->acceptStates.count(state) == 1){
-        lastAcceptState = state;
-        lastAcceptOffset = offset;
-      }
-      if(dfa->lookaheadStates.count(state) == 1){
-        lastLookaheadState = state;
-        lastLookaheadOffset = offset;
-      }
-    }
-    else if(lastAcceptState.has_value()){
-      int lastOffset;
-      if(dfa->lookaheadMap.count(lastAcceptState.value()) == 1){
-        if(dfa->lookaheadMap[lastAcceptState.value()] == lastLookaheadState){
-          lastOffset = lastLookaheadOffset;
-        }
-        else { //debug
-          std::cout << "Accept state points to wrong lookahead!\n";
-          lastOffset = -1;
-        }
-      }
-      else {
-        lastOffset = lastAcceptOffset;
-      }
-      return std::make_tuple(dfa->tokens.at(lastAcceptState.value()), lastOffset);
-    }
-    return std::make_tuple(token, offset);
-  }
-
-  void initialize(){
-    state = 0;
-    offset = 0;
-    lastAcceptState = std::nullopt;
-    lastLookaheadState = std::nullopt;
-  }
-
-  void test(DFA* dfa, const std::string& input){
-    FakeLexerTest::dfa = dfa;
-    initialize();
-
-    const int bufferSize = 4096;
-    std::vector<char> buffer1(bufferSize, 0);
-    std::vector<char> buffer2(bufferSize, 0);
-    std::stringstream fin(input);
-
-    int lexemeBegin = 0;
-    bool onFirstBuffer = true;
-    bool lexemeBeginsFirstBuffer = true;
-
-    while(true){
-      std::vector<char>& buffer = onFirstBuffer ? buffer1 : buffer2;
-      fin.read(&buffer[0], bufferSize);
-      //printBuffer(buffer1, "buffer1"); //debug
-      //printBuffer(buffer2, "buffer2"); //debug
-      //std::cout << "on buffer" << (onFirstBuffer ? "1" : "2") << std::endl; //debug
-      int forward;
-      if(fin.gcount() != 0){
-        for(forward = 0; forward < bufferSize; forward++){
-          auto result = feed(buffer[forward]);
-          auto token = std::get<0>(result);
-          if(token.has_value()){
-            int offset = std::get<1>(result);
-            if(onFirstBuffer == lexemeBeginsFirstBuffer){
-              lexemeBegin += offset;
-            }
-            else {
-              lexemeBegin = (lexemeBegin + offset) % bufferSize;
-              lexemeBeginsFirstBuffer = !lexemeBeginsFirstBuffer;
-            }
-            forward = lexemeBegin - 1;
-            //std::cout << "lexeme begins on buffer" << (lexemeBeginsFirstBuffer ? "1" : "2") << std::endl; //debug
-            //std::cout << "forward = " << forward << std::endl; //debug
-            //std::cout << "lexemeBegin = " << lexemeBegin << std::endl; //debug
-            initialize();
-            std::cout << token.value() + " token\n";
-          }
-          else if(buffer[forward] == 0){
-            break;
-          }
-        }
-      onFirstBuffer = !onFirstBuffer;
-      }
-      else {
-        break;
-      }
-    }
+  void test(const std::string& regex, std::map<std::string, std::string> definitions){
+    std::cout << regex << "\n----->\n" << LexerReader::characterClassProcess(regex, definitions) << "\n";
     std::cout << "------------------------------\n\n";
   }
 
-} //end of namespace FakeLexerTest
+} //end of namespace CharacterClassTest
 
-/*
-namespace RegexConversionCharacterClassTest {
-  void test(const std::string& regex){
-    std::cout << "Input: " + regex + "\n";
-    std::cout << "Output: " + characterClassProcess(regex) + "\n";
+namespace RegexNotationTest {
+
+  void test(const std::string& regex, std::map<std::string, std::string> definitions){
+    std::cout << regex << "\n----->" << LexerReader::regexNotationConversion(regex, definitions);
     std::cout << "------------------------------\n\n";
   }
-} //end of namespace RegexConversionCharacterClassTest
 
-namespace RegexConversionTest {
-  void test(const std::string& regex){
-
-    std::cout << "Input: " + regex + "\n";
-    std::cout << "Output: " + regexNotationConversion(regex) + "\n";
-    std::cout << "------------------------------\n\n";
-  }
-} //end of namespace RegexConversionTest
-*/
+} //end of namespace RegexNotationTest
 
 int main(){
   std::cout << "SyntaxTree:\n\n";
@@ -293,32 +185,6 @@ int main(){
   DFA dfa(nfa);
   DFATest::test(dfa);
 
-  std::cout << "Fake lexer:\n\n";
-  std::vector<std::tuple<std::string, std::string> > tokenRegexList2 =
-    {
-      std::make_tuple(R"(if/\(\)then)", "if"),
-      std::make_tuple("then", "then"),
-      std::make_tuple(R"(\(\))", "parentheses"),
-      std::make_tuple("(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|_)(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|_)*", "id")
-    };
-  std::string input = "if()then";
-  NFA _nfa(tokenRegexList2);
-  DFA _dfa(_nfa);
-  FakeLexerTest::test(&_dfa, input);
-
-  /*
-  std::cout << "RegexNotationConversion characterClassProcess:\n\n";
-  RegexConversionCharacterClassTest::test("[A-Za-z]([A-Za-z]|[0-9])*");
-  RegexConversionCharacterClassTest::test("[abcde]");
-  RegexConversionCharacterClassTest::test("[+-]");
-  RegexConversionCharacterClassTest::test("[+\\-]");
-  RegexConversionCharacterClassTest::test("\\.a+");
-  RegexConversionCharacterClassTest::test("[0-9]+(\\.[0-9]+)?(E[+-]?[0-9]+)?");
-
-  std::cout << "RegexNotationConversion regexNotationConversion:\n\n";
-  RegexConversionTest::test("(a)+");
-  RegexConversionTest::test("(a)?");
-  RegexConversionTest::test("[a-e]{1,5}");
-  RegexConversionTest::test("[0-9]+(\\.[0-9]+)?(E[+-]?[0-9]+)?");
-  */
+  std::cout << "characterClassProcess:\n\n";
+  CharacterClassTest::test(R"(\/\/[^\n]*\n)", {});
 }

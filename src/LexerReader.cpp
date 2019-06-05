@@ -100,7 +100,6 @@ std::string LexerReader::characterClassProcess(std::string regex, std::map<std::
   for(int i = 0; i < regex.length(); i++){
     if(regex[i] == '\\' && !escape){
       escape = true;
-      result += '\\';
       continue;
     }
     if(regex[i] == '"' && !escape){
@@ -139,19 +138,19 @@ std::string LexerReader::characterClassProcess(std::string regex, std::map<std::
             escape = true;
             continue;
           }
-          if(regex[j] == 't' && escape){
-            unblocked.erase('\t');
-            continue;
-          }
-          if(regex[j] == 'n' && escape){
-            unblocked.erase('\n');
-            continue;
-          }
           if(regex[j] == ']' && !escape){
             i = j;
             break;
           }
-          unblocked.erase(regex[j]);
+          if(regex[j] == 't' && escape){
+            unblocked.erase('\t');
+          }
+          else if(regex[j] == 'n' && escape){
+            unblocked.erase('\n');
+          }
+          else {
+            unblocked.erase(regex[j]);
+          }
           if(j + 2 < regex.length() && regex[j + 1] == '-'){
             for(char c = regex[j] + 1; c <= regex[j + 2]; c++){
               unblocked.erase(c);
@@ -174,6 +173,10 @@ std::string LexerReader::characterClassProcess(std::string regex, std::map<std::
       }
       else {
         for(int j = i + 1; j < regex.length(); j++){
+          if(regex[j] == '\\'){
+            escape = true;
+            continue;
+          }
           if(regex[j] == ']' && !escape){
             i = j;
             break;
@@ -186,10 +189,6 @@ std::string LexerReader::characterClassProcess(std::string regex, std::map<std::
           }
           else {
             content += regex[j];
-          }
-          if(regex[j] == '\\'){
-            escape = true;
-            continue;
           }
           if(j + 1 < regex.length() && regex[j + 1] != ']'){
             content += '|';
@@ -222,7 +221,16 @@ std::string LexerReader::characterClassProcess(std::string regex, std::map<std::
       }
       result += "(" + definitions[name] + ")";
     }
+    else if(regex[i] == 't' && escape){
+      result += '\t';
+    }
+    else if(regex[i] == 'n' && escape){
+      result += '\n';
+    }
     else {
+      if(escape){
+        result += '\\';
+      }
       result += regex[i];
     }
     escape = false;
