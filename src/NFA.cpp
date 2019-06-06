@@ -2,13 +2,13 @@
 
 //Takes list of regexes, constructs them, and then creates e-transitions from state 0 to all the resulting mini-NFAs
 NFA::NFA(std::vector<std::tuple<std::string, std::string> > tokenRegexList){
-  transitions.resize(1);
+  table.resize(1);
   acceptStates = {};
   lookaheadStates = {};
   tokens = {};
   int index = 1;
   for (auto pair : tokenRegexList){
-    transitions[0].emplace(index, std::nullopt);
+    table[0]['\0'].emplace(index);
     SyntaxTree tree(std::get<0>(pair));
     auto branch = construct(tree.root, index);
     int acceptState = std::get<0>(branch);
@@ -34,35 +34,35 @@ std::tuple<int, std::optional<int> > NFA::construct(const Node* root, int index)
     case NodeType::_lookahead:
       std::get<1>(result) = index;
     case NodeType::_empty:
-      transitions.emplace_back(std::map<int, std::optional<char> >({{index + 1, std::nullopt}}));
-      transitions.emplace_back(std::map<int, std::optional<char> >());
+      table.expand(2);
+      table[index]['\0'] = {index + 1};
       std::get<0>(result) = index + 1;
       break;
     case NodeType::_leaf:
-      transitions.emplace_back(std::map<int, std::optional<char> >({{index + 1,
-            std::optional<char>(root->leafType)}}));
-      transitions.emplace_back(std::map<int, std::optional<char> >());
+      table.expand(2);
+      table[index][root->leafType] = {index + 1};
       std::get<0>(result) = index + 1;
       break;
     case NodeType::_union:
       {
-        transitions.emplace_back(std::map<int, std::optional<char> >({{index + 1, std::nullopt}}));
+        table.expand(1);
+        table[index]['\0'] = {index + 1};
         auto leftBranch = construct(root->left.get(), index + 1);
         int acceptStateLeft = std::get<0>(leftBranch);
         if(std::get<1>(leftBranch).has_value()){
           std::get<1>(result) = std::get<1>(leftBranch);
         }
-        transitions[index].emplace(acceptStateLeft + 1, std::nullopt);
+        table[index]['\0'].emplace(acceptStateLeft + 1);
         auto rightBranch = construct(root->right.get(), acceptStateLeft + 1);
         int acceptStateRight = std::get<0>(rightBranch);
         if(std::get<1>(rightBranch).has_value()){
           std::get<1>(result) = std::get<1>(rightBranch);
         }
+        table.expand(1);
         int acceptState = acceptStateRight + 1;
-        transitions.emplace_back(std::map<int, std::optional<char> >());
-        transitions[acceptStateLeft].emplace(acceptState, std::nullopt);
-        transitions[acceptStateRight].emplace(acceptState, std::nullopt);
-        std::get<0>(result) = acceptStateRight + 1;
+        table[acceptStateLeft]['\0'].emplace(acceptState);
+        table[acceptStateRight]['\0'].emplace(acceptState);
+        std::get<0>(result) = acceptState;
         break;
       }
     case NodeType::_concatenation:
@@ -72,7 +72,6 @@ std::tuple<int, std::optional<int> > NFA::construct(const Node* root, int index)
         if(std::get<1>(leftBranch).has_value()){
           std::get<1>(result) = std::get<1>(leftBranch);
         }
-        transitions.pop_back();
         auto rightBranch = construct(root->right.get(), acceptStateLeft);
         int acceptState = std::get<0>(rightBranch);
         if(std::get<1>(rightBranch).has_value()){
@@ -83,17 +82,16 @@ std::tuple<int, std::optional<int> > NFA::construct(const Node* root, int index)
       }
     case NodeType::_star:
       {
-        transitions.emplace_back(std::map<int, std::optional<char> >({{index + 1, std::nullopt}}));
+        table.expand(1);
         auto branch = construct(root->center.get(), index + 1);
         int acceptStateChild = std::get<0>(branch);
         if(std::get<1>(branch).has_value()){
           std::get<1>(result) = std::get<1>(branch);
         }
+        table.expand(1);
         int acceptState = acceptStateChild + 1;
-        transitions.emplace_back(std::map<int, std::optional<char> >());
-        transitions[index].emplace(acceptState, std::nullopt);
-        transitions[acceptStateChild].emplace(index + 1, std::nullopt);
-        transitions[acceptStateChild].emplace(acceptState, std::nullopt);
+        table[index]['\0'] = {index + 1, acceptState};
+        table[acceptStateChild]['\0'] = {index + 1, acceptState};
         std::get<0>(result) = acceptState;
         break;
       }

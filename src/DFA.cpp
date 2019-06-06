@@ -1,10 +1,6 @@
 #include "DFA.h"
 
 DFA::DFA(NFA nfa){
-  transitions = {};
-  acceptStates = {};
-  lookaheadStates = {};
-  tokens = {};
   this->nfa = &nfa;
   construct();
 }
@@ -13,12 +9,14 @@ DFA::DFA(NFA nfa){
 void DFA::construct(){
   std::set<std::set<int> > unmarked = {e_closure(std::set<int>({0}))};
   std::set<std::set<int> > Dstates;
-  std::map<std::set<int>, std::map<char, std::set<int> > > Dtran;
+  std::map<std::set<int>, int> stateIndexMap;
+  int i = 0;
+  int j = 0;
   while(!unmarked.empty()){
-    std::set<int> states = *unmarked.begin();
-    unmarked.erase(unmarked.begin());
+    std::set<int> states = unmarked.extract(unmarked.begin()).value();
+    stateIndexMap.emplace(states, i);
+    table.expand(1);
     Dstates.emplace(states);
-    Dtran.emplace(states, std::map<char, std::set<int> >());
     for(char c : constants::alphabetSet){
       std::set<int> newStates = e_closure(move(states, c));
       if(newStates.empty()){
@@ -26,29 +24,34 @@ void DFA::construct(){
       }
       if(Dstates.count(newStates) == 0){
         unmarked.emplace(newStates);
+        j++;
+        stateIndexMap.emplace(newStates, j);
+        table[i][c] = j;
       }
-      Dtran[states].emplace(c, newStates);
+      else {
+        table[i][c] = stateIndexMap[newStates];
+      }
     }
+    j++;
+    i = j;
   }
-  std::map<std::set<int>, int> stateIndexMap;
-  int i = 0;
-  for(auto pair : Dtran){
-    stateIndexMap.emplace(pair.first, i);
-    for(int j : nfa->lookaheadStates){
-      if(pair.first.count(j) == 1){
-        lookaheadStates.emplace(i);
+  for(const auto& states : Dstates){
+    int index = stateIndexMap[states];
+    for(int k : nfa->lookaheadStates){
+      if(states.count(k) == 1){
+        lookaheadStates.emplace(index);
         break;
       }
     }
-    for(int j : nfa->acceptStates){
-      if(pair.first.count(j) == 1){
-        acceptStates.emplace(i);
-        tokens.emplace(i, nfa->tokens.at(j));
-        if(nfa->lookaheadMap.count(j) == 1){
-          int lookaheadNFA = nfa->lookaheadMap[j];
+    for(int k : nfa->acceptStates){
+      if(states.count(k) == 1){
+        acceptStates.emplace(index);
+        tokens.emplace(index, nfa->tokens.at(k));
+        if(nfa->lookaheadMap.count(k) == 1){
+          int lookaheadNFA = nfa->lookaheadMap[k];
           for(auto map : stateIndexMap){
             if(map.first.count(lookaheadNFA) == 1){
-              lookaheadMap.emplace(i, map.second);
+              lookaheadMap.emplace(index, map.second);
               break;
             }
           }
@@ -56,33 +59,17 @@ void DFA::construct(){
         break;
       }
     }
-    i++;
-  }
-  for(auto pair : Dtran){
-    std::map<char, int> transitionMap;
-    for(auto transition : pair.second){
-      transitionMap.emplace(transition.first, stateIndexMap[transition.second]);
-    }
-    this->transitions.emplace_back(transitionMap);
   }
 }
 
 //Returns the set of states that can be reached through e-transitions from the set of states "states"
 std::set<int> DFA::e_closure(std::set<int> states){
-  std::vector<int> stack;
-  stack.reserve(states.size());
-  for(int state : states){
-    stack.emplace_back(state);
-  }
   std::set<int> result = states;
-  while(!stack.empty()){
-    int t = stack.back();
-    stack.pop_back();
-    for(auto transition : nfa->transitions[t]){
-      if(!transition.second.has_value() && result.count(transition.first) == 0){
-        result.emplace(transition.first);
-        stack.emplace_back(transition.first);
-      }
+  while(!states.empty()){
+    int t = states.extract(states.begin()).value();
+    for(int state : nfa->table[t]['\0']){
+      result.emplace(state);
+      states.emplace(state);
     }
   }
   return result;
@@ -92,10 +79,8 @@ std::set<int> DFA::e_closure(std::set<int> states){
 std::set<int> DFA::move(std::set<int> states, char symbol){
   std::set<int> result;
   for(int state : states){
-    for(auto transition : nfa->transitions[state]){
-      if(transition.second.has_value() && transition.second.value() == symbol){
-        result.emplace(transition.first);
-      }
+    for(int newState : nfa->table[state][symbol]){
+      result.emplace(newState);
     }
   }
   return result;

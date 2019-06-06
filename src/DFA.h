@@ -3,6 +3,7 @@
 
 #include "constants.h"
 #include "NFA.h"
+#include "Table.h"
 
 #include <map>
 #include <optional>
@@ -13,7 +14,7 @@
 
 class DFA {
   public:
-    std::vector<std::map<char, int> > transitions;
+    Table<char, int> table;
     std::set<int> acceptStates;
     std::set<int> lookaheadStates;
     std::map<int, int> lookaheadMap; //maps accept states to lookaheads
